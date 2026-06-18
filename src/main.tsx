@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import ReactMarkdown from "react-markdown";
 import * as mammoth from "mammoth/mammoth.browser";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
+import remarkGfm from "remark-gfm";
 import "./styles.css";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
@@ -170,7 +172,20 @@ function App() {
 
           <section className="reportPane">
             {report ? (
-              <article className="report">{report}</article>
+              <article className="report">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    a: ({ children, ...props }) => (
+                      <a {...props} rel="noreferrer" target="_blank">
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {report}
+                </ReactMarkdown>
+              </article>
             ) : (
               <div className="emptyState">
                 <h2>等待论文</h2>
