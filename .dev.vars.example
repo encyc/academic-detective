@@ -1,5 +1,7 @@
 MODELSCOPE_API_KEY=your_modelscope_sdk_token
 MODELSCOPE_BASE_URL=https://api-inference.modelscope.cn/v1
 MODELSCOPE_MODEL=Qwen/Qwen3-30B-A3B-Instruct-2507
+OPENCODE_ZEN_API_KEY=your_opencode_zen_key
+DEFAULT_PROVIDER_ID=modelscope
 DAILY_IP_LIMIT=3
 MAX_TEXT_CHARS=60000

@@ -12,9 +12,18 @@ interface AnalysisResponse {
   error?: string;
   remaining?: number;
   provider?: string;
+  providerLabel?: string;
 }
 
 type Status = "idle" | "extracting" | "analyzing" | "done" | "error";
+
+const MODEL_OPTIONS = [
+  { id: "modelscope", label: "ModelScope" },
+  { id: "opencode-zen:mimo-v2.5-free", label: "Zen: MiMo-V2.5 Free" },
+  { id: "opencode-zen:north-mini-code-free", label: "Zen: North Mini Code Free" },
+  { id: "opencode-zen:nemotron-3-ultra-free", label: "Zen: Nemotron 3 Ultra Free" },
+  { id: "opencode-zen:deepseek-v4-flash-free", label: "Zen: DeepSeek V4 Flash Free" },
+];
 
 function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -24,6 +33,8 @@ function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [providerId, setProviderId] = useState(MODEL_OPTIONS[0].id);
+  const [lastProvider, setLastProvider] = useState("");
 
   const canAnalyze = useMemo(() => Boolean(file && extractedText.length > 200 && status !== "analyzing"), [
     file,
@@ -70,6 +81,7 @@ function App() {
           mimeType: file.type,
           extractedText,
           userMessage,
+          providerId,
         }),
       });
 
@@ -80,6 +92,7 @@ function App() {
 
       setReport(payload.report ?? "");
       setRemaining(payload.remaining ?? null);
+      setLastProvider(payload.providerLabel ?? payload.provider ?? "");
       setStatus("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "分析失败。");
@@ -113,6 +126,17 @@ function App() {
             </label>
 
             <label className="field">
+              <span>模型</span>
+              <select value={providerId} onChange={(event) => setProviderId(event.target.value)}>
+                {MODEL_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
               <span>补充说明</span>
               <textarea
                 value={userMessage}
@@ -130,7 +154,12 @@ function App() {
               {status === "extracting" ? "提取中" : status === "analyzing" ? "分析中" : "开始分析"}
             </button>
 
-            {remaining !== null && <p className="hint">今日剩余免费分析次数：{remaining}</p>}
+            {remaining !== null && (
+              <p className="hint">
+                今日剩余免费分析次数：{remaining}
+                {lastProvider ? ` · ${lastProvider}` : ""}
+              </p>
+            )}
             {error && <p className="error">{error}</p>}
           </section>
 

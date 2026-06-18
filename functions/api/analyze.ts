@@ -1,6 +1,6 @@
 import { intFromEnv, type Env } from "../_shared/env";
 import { json, readJson } from "../_shared/http";
-import { getDefaultProvider } from "../_shared/model-providers";
+import { getProvider } from "../_shared/model-providers";
 import { checkRateLimit } from "../_shared/rate-limit";
 import { buildFraudDetectionPrompt } from "../_shared/skill";
 
@@ -9,6 +9,7 @@ interface AnalyzeRequest {
   mimeType: string;
   extractedText: string;
   userMessage?: string;
+  providerId?: string;
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
@@ -34,7 +35,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         ? `${extractedText.slice(0, maxChars)}\n\n[系统提示：文本超过 ${maxChars} 字符，后续内容已截断。]`
         : extractedText;
 
-    const provider = getDefaultProvider(env);
+    const provider = getProvider(env, body.providerId);
     const prompt = buildFraudDetectionPrompt({
       fileName: body.fileName,
       mimeType: body.mimeType,
@@ -54,7 +55,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       request.signal,
     );
 
-    return json({ report, remaining: limit.remaining, provider: provider.id });
+    return json({ report, remaining: limit.remaining, provider: provider.id, providerLabel: provider.label });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return json({ error: message }, { status: 500 });

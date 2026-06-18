@@ -20,6 +20,7 @@ body {
 
 button,
 textarea,
+select,
 input {
   font: inherit;
 }
@@ -143,7 +144,18 @@ textarea {
   background: #fbfcfb;
 }
 
+select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #cbd6cf;
+  border-radius: 8px;
+  padding: 0 12px;
+  color: #15201d;
+  background: #fbfcfb;
+}
+
 textarea:focus,
+select:focus,
 button:focus-visible,
 .dropzone:focus-within {
   outline: 3px solid #b9d8ff;

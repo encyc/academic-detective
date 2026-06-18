@@ -2,6 +2,8 @@ export interface Env {
   MODELSCOPE_API_KEY?: string;
   MODELSCOPE_BASE_URL?: string;
   MODELSCOPE_MODEL?: string;
+  OPENCODE_ZEN_API_KEY?: string;
+  DEFAULT_PROVIDER_ID?: string;
   DAILY_IP_LIMIT?: string;
   MAX_TEXT_CHARS?: string;
   RATE_LIMIT?: KVNamespace;
