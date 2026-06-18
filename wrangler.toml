@@ -1,0 +1,9 @@
+name = "academic-detective"
+compatibility_date = "2026-06-18"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "f154250788cb4b70bbd6b6643ed12e89"
+preview_id = "059d5516b1c74a7b977fbf7e483c2775"
