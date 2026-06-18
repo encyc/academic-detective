@@ -105,10 +105,15 @@ function App() {
       <section className="workspace">
         <header className="topbar">
           <div>
-            <p className="eyebrow">公益学术诚信初筛</p>
+            <p className="eyebrow">学术打假AI初筛</p>
             <h1>Academic Detective</h1>
           </div>
-          <span className="badge">AI 初筛</span>
+          <nav className="navActions" aria-label="项目导航">
+            <a className="navLink" href="https://github.com/encyc/academic-detective" rel="noreferrer" target="_blank">
+              GitHub
+            </a>
+            <span className="badge">AI 初筛</span>
+          </nav>
         </header>
 
         <div className="panes">

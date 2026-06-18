@@ -7,7 +7,7 @@ export interface RateLimitResult {
 }
 
 export async function checkRateLimit(request: Request, env: Env): Promise<RateLimitResult> {
-  const limit = intFromEnv(env.DAILY_IP_LIMIT, 3);
+  const limit = intFromEnv(env.DAILY_IP_LIMIT, 20);
   const ip = request.headers.get("cf-connecting-ip") ?? "local";
   const day = new Date().toISOString().slice(0, 10);
   const key = `ip:${day}:${ip}`;

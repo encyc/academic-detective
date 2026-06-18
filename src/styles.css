@@ -69,6 +69,31 @@ h1 {
   font-weight: 700;
 }
 
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid #bccac1;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #17392e;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.navLink:hover {
+  border-color: #7c988b;
+  background: #f8faf7;
+}
+
 .panes {
   display: grid;
   grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
@@ -250,6 +275,11 @@ button:focus-visible,
 
   .topbar {
     align-items: flex-start;
+  }
+
+  .navActions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .panes {
