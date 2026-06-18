@@ -8,12 +8,15 @@ export interface ChatMessage {
 export interface ChatProvider {
   id: string;
   label: string;
+  group: "modelscope" | "opencode-zen";
+  model: string;
   complete(messages: ChatMessage[], signal?: AbortSignal): Promise<string>;
 }
 
 interface OpenAICompatibleOptions {
   id: string;
   label: string;
+  group: ChatProvider["group"];
   apiKey: string;
   baseUrl?: string;
   chatCompletionsUrl?: string;
@@ -27,6 +30,8 @@ export function createOpenAICompatibleProvider(options: OpenAICompatibleOptions)
   return {
     id: options.id,
     label: options.label,
+    group: options.group,
+    model: options.model,
     async complete(messages, signal) {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -63,7 +68,10 @@ export function createOpenAICompatibleProvider(options: OpenAICompatibleOptions)
 export function getProvider(env: Env, requestedProviderId?: string): ChatProvider {
   const providers = getConfiguredProviders(env);
   const providerId = requestedProviderId || env.DEFAULT_PROVIDER_ID || "modelscope";
-  const provider = providers.find((candidate) => candidate.id === providerId);
+  const provider =
+    providerId === "modelscope"
+      ? providers.find((candidate) => candidate.id === DEFAULT_MODELSCOPE_PROVIDER_ID)
+      : providers.find((candidate) => candidate.id === providerId);
 
   if (!provider) {
     const configured = providers.map((candidate) => candidate.id).join(", ") || "none";
@@ -79,13 +87,16 @@ export function getConfiguredProviders(env: Env): ChatProvider[] {
   const apiKey = env.MODELSCOPE_API_KEY;
   if (apiKey) {
     providers.push(
-      createOpenAICompatibleProvider({
-        id: "modelscope",
-        label: "ModelScope",
-        apiKey,
-        baseUrl: env.MODELSCOPE_BASE_URL ?? "https://api-inference.modelscope.cn/v1",
-        model: env.MODELSCOPE_MODEL ?? "Qwen/Qwen3-30B-A3B-Instruct-2507",
-      }),
+      ...MODELSCOPE_MODELS.map((model) =>
+        createOpenAICompatibleProvider({
+          id: `modelscope:${model.id}`,
+          label: model.label,
+          group: "modelscope",
+          apiKey,
+          baseUrl: env.MODELSCOPE_BASE_URL ?? "https://api-inference.modelscope.cn/v1",
+          model: model.id,
+        }),
+      ),
     );
   }
 
@@ -94,7 +105,8 @@ export function getConfiguredProviders(env: Env): ChatProvider[] {
       ...ZEN_FREE_MODELS.map((model) =>
         createOpenAICompatibleProvider({
           id: `opencode-zen:${model.id}`,
-          label: `Zen: ${model.label}`,
+          label: model.label,
+          group: "opencode-zen",
           apiKey: env.OPENCODE_ZEN_API_KEY!,
           chatCompletionsUrl: "https://opencode.ai/zen/v1/chat/completions",
           model: model.id,
@@ -105,6 +117,27 @@ export function getConfiguredProviders(env: Env): ChatProvider[] {
 
   return providers;
 }
+
+export const DEFAULT_MODELSCOPE_MODEL = "Qwen/Qwen3-30B-A3B-Instruct-2507";
+
+export const DEFAULT_MODELSCOPE_PROVIDER_ID = `modelscope:${DEFAULT_MODELSCOPE_MODEL}`;
+
+export const MODELSCOPE_MODELS = [
+  { id: DEFAULT_MODELSCOPE_MODEL, label: "Qwen3 30B A3B Instruct" },
+  { id: "deepseek-ai/DeepSeek-V4-Flash", label: "DeepSeek V4 Flash" },
+  { id: "deepseek-ai/DeepSeek-V3.2", label: "DeepSeek V3.2" },
+  { id: "Qwen/Qwen3-235B-A22B-Instruct-2507", label: "Qwen3 235B A22B Instruct" },
+  { id: "Qwen/Qwen3-235B-A22B-Thinking-2507", label: "Qwen3 235B A22B Thinking" },
+  { id: "Qwen/Qwen3-30B-A3B", label: "Qwen3 30B A3B" },
+  { id: "Qwen/Qwen3-30B-A3B-Thinking-2507", label: "Qwen3 30B A3B Thinking" },
+  { id: "Qwen/Qwen3-Next-80B-A3B-Instruct", label: "Qwen3 Next 80B A3B Instruct" },
+  { id: "Qwen/Qwen3.5-397B-A17B", label: "Qwen3.5 397B A17B" },
+  { id: "moonshotai/Kimi-K2.5", label: "Kimi K2.5" },
+  { id: "MiniMax/MiniMax-M3", label: "MiniMax M3" },
+  { id: "ZhipuAI/GLM-5.2", label: "GLM 5.2" },
+  { id: "stepfun-ai/Step-3.7-Flash", label: "Step 3.7 Flash" },
+  { id: "XiaomiMiMo/MiMo-V2-Flash", label: "MiMo V2 Flash" },
+] as const;
 
 export const ZEN_FREE_MODELS = [
   { id: "mimo-v2.5-free", label: "MiMo-V2.5 Free" },

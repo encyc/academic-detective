@@ -6,8 +6,13 @@
 
 - 支持在浏览器端提取 PDF / DOCX / TXT 文本。
 - Worker 接收文本和文件元数据，调用内置的 `geng-academic-fraud-detector` skill 生成初筛报告。
+- 前端按 ModelScope / OpenCode Zen 分组选择模型，并展示当前 IP 的本站每日剩余分析次数。
 - 默认不保存用户文件；R2 上传绑定已预留，后续可按需开启。
 - 结果仅供学术讨论和教育用途，不构成学术不端认定。
+
+## 模型额度说明
+
+ModelScope 和 OpenCode Zen 当前接入的是 OpenAI-compatible chat completions 接口。ModelScope 可通过 `/v1/models` 列出模型，OpenCode Zen 可直接调用指定免费模型；二者都没有在当前接入路径中提供“按模型剩余调用次数”的标准字段。因此页面展示的是本站 KV 限流中的当前 IP 每日剩余次数，所有模型共享该次数。
 
 ## 致谢
 

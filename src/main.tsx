@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import ReactMarkdown from "react-markdown";
 import * as mammoth from "mammoth/mammoth.browser";
@@ -17,14 +17,54 @@ interface AnalysisResponse {
   providerLabel?: string;
 }
 
+interface ProviderOption {
+  id: string;
+  label: string;
+  group: "modelscope" | "opencode-zen";
+  model: string;
+}
+
+interface ProvidersResponse {
+  providers: ProviderOption[];
+  rateLimit?: {
+    limit: number;
+    remaining: number;
+  };
+}
+
 type Status = "idle" | "extracting" | "analyzing" | "done" | "error";
 
-const MODEL_OPTIONS = [
-  { id: "modelscope", label: "ModelScope" },
-  { id: "opencode-zen:mimo-v2.5-free", label: "Zen: MiMo-V2.5 Free" },
-  { id: "opencode-zen:north-mini-code-free", label: "Zen: North Mini Code Free" },
-  { id: "opencode-zen:nemotron-3-ultra-free", label: "Zen: Nemotron 3 Ultra Free" },
-  { id: "opencode-zen:deepseek-v4-flash-free", label: "Zen: DeepSeek V4 Flash Free" },
+const FALLBACK_MODEL_OPTIONS: ProviderOption[] = [
+  {
+    id: "modelscope:Qwen/Qwen3-30B-A3B-Instruct-2507",
+    label: "Qwen3 30B A3B Instruct",
+    group: "modelscope",
+    model: "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  },
+  {
+    id: "opencode-zen:mimo-v2.5-free",
+    label: "MiMo-V2.5 Free",
+    group: "opencode-zen",
+    model: "mimo-v2.5-free",
+  },
+  {
+    id: "opencode-zen:north-mini-code-free",
+    label: "North Mini Code Free",
+    group: "opencode-zen",
+    model: "north-mini-code-free",
+  },
+  {
+    id: "opencode-zen:nemotron-3-ultra-free",
+    label: "Nemotron 3 Ultra Free",
+    group: "opencode-zen",
+    model: "nemotron-3-ultra-free",
+  },
+  {
+    id: "opencode-zen:deepseek-v4-flash-free",
+    label: "DeepSeek V4 Flash Free",
+    group: "opencode-zen",
+    model: "deepseek-v4-flash-free",
+  },
 ];
 
 function App() {
@@ -35,7 +75,8 @@ function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
   const [remaining, setRemaining] = useState<number | null>(null);
-  const [providerId, setProviderId] = useState(MODEL_OPTIONS[0].id);
+  const [providers, setProviders] = useState<ProviderOption[]>(FALLBACK_MODEL_OPTIONS);
+  const [providerId, setProviderId] = useState(FALLBACK_MODEL_OPTIONS[0].id);
   const [lastProvider, setLastProvider] = useState("");
 
   const canAnalyze = useMemo(() => Boolean(file && extractedText.length > 200 && status !== "analyzing"), [
@@ -43,6 +84,37 @@ function App() {
     extractedText,
     status,
   ]);
+
+  const groupedProviders = useMemo(() => groupProviders(providers), [providers]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProviders() {
+      try {
+        const response = await fetch("/api/providers");
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as ProvidersResponse;
+        if (!isMounted || payload.providers.length === 0) return;
+
+        setProviders(payload.providers);
+        setProviderId((current) =>
+          payload.providers.some((provider) => provider.id === current) ? current : payload.providers[0].id,
+        );
+        if (payload.rateLimit) {
+          setRemaining(payload.rateLimit.remaining);
+        }
+      } catch {
+        // Keep fallback providers when the metadata endpoint is unavailable.
+      }
+    }
+
+    void loadProviders();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleFile(nextFile: File | undefined) {
     if (!nextFile) return;
@@ -135,10 +207,15 @@ function App() {
             <label className="field">
               <span>模型</span>
               <select value={providerId} onChange={(event) => setProviderId(event.target.value)}>
-                {MODEL_OPTIONS.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
+                {groupedProviders.map((group) => (
+                  <optgroup key={group.id} label={group.label}>
+                    {group.providers.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                        {remaining !== null ? ` · 剩余 ${remaining} 次` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>
@@ -247,6 +324,22 @@ function normalizeText(value: string): string {
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function groupProviders(providers: ProviderOption[]) {
+  const groups = [
+    { id: "modelscope", label: "ModelScope", providers: [] as ProviderOption[] },
+    { id: "opencode-zen", label: "OpenCode Zen", providers: [] as ProviderOption[] },
+  ];
+
+  for (const provider of providers) {
+    const group = groups.find((candidate) => candidate.id === provider.group);
+    if (group) {
+      group.providers.push(provider);
+    }
+  }
+
+  return groups.filter((group) => group.providers.length > 0);
 }
 
 createRoot(document.getElementById("root")!).render(
